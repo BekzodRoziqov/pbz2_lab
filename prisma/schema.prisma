@@ -10,31 +10,57 @@ datasource db {
   url      = "file:./deb.db"
 }
 
-model Customer {
-  id String @default(cuid()) @id
-  name String
-  second_name String
-  plan Plan @relation(references: [id], fields: [plan_id])
-  plan_id String
-  debts Int
-  address String
-  region Region @relation(references: [id], fields: [region_id])
-  region_id String
-  created_at DateTime @default(now())
+model Company {
+  id                String   @default(cuid()) @id
+  name              String  @unique
+  address           String
+  park              Park  @relation(references: [id], fields: [park_id])
+  park_id           String @unique
+  created_at        DateTime @default(now())
 }
 
-model Region {
-  id String @default(cuid()) @id
-  name String
-  price_for_region Int
-  customer Customer[]
-  created_at DateTime @default(now())
+model LandedPlant {
+  id                String   @default(cuid()) @id
+  land_date         DateTime @default(now())
+  plant_age         Int
+  plant_type        String
+  watering_regime   String
+  park              Park @relation(references: [id], fields: [park_id])
+  park_id           String
+  created_at        DateTime @default(now())
 }
 
-model Plan {
-  id String @default(cuid()) @id
-  name String @unique
-  default_price Int
-  users Customer[]
-  created_at DateTime @default(now())
+model Stuff {
+  id                String   @default(cuid()) @id
+  name              String
+  phone             Int
+  address           String
+  graph             DateTime
+  park              Park @relation(references: [id], fields: [park_id])
+  park_id           String
+  created_at        DateTime @default(now())
+}
+
+model Decorator {
+  id                String   @default(cuid()) @id
+  name              String
+  phone             Int
+  address           String
+  education         String
+  graduate_place    String
+  category          String
+  park              Park @relation(references: [id], fields: [park_id])
+  park_id           String
+  created_at        DateTime @default(now())
+}
+
+model Park {
+  id                String   @default(cuid()) @id
+  name              String @unique
+  zone              String
+  landed_plant      LandedPlant[]
+  stuff             Stuff[]
+  decorator         Decorator[]
+  company           Company?
+  created_at        DateTime @default(now())
 }

@@ -1,180 +1,118 @@
-import React, {useState} from "react"
-import {GetStaticProps} from "next"
-import prisma from '../lib/prisma';
-import Plan from "../types/plan";
-import User from "../types/user";
-import {City} from "../types/City";
-import {Radio, Table, Tabs} from "antd";
+import React from "react"
+import prisma from "../lib/prisma"
+import {Plant, Stuff} from "../types/Company"
 import styles from "./styles.module.css"
-import moment from "moment";
+import {DatePicker, Table, Tabs} from "antd"
+import {ColumnsType} from "antd/es/table"
+import {GetStaticProps} from "next"
+import moment, {Moment} from "moment"
 
 interface BlogProps {
-    users: User[]
-    cities: City[]
-    plans: Plan[]
+    landedPlant: Plant[]
+    stuff: Stuff[]
 }
 
-const Blog: React.FC<BlogProps> = ({users, cities, plans}) => {
-    const [selectedCity, setSelectedCity] = useState<string>(cities[0].id)
-    const [selectedMonth, setSelectedMonth] = useState<string>(moment(users[0].created_at).format("MM"))
+const Blog: React.FC<BlogProps> = ({landedPlant, stuff}) => {
+    const {RangePicker} = DatePicker
+    const [date, setDate] = React.useState<[Moment, Moment]>([undefined, undefined])
 
-    const columns = [
+    const stuffColumns: ColumnsType<Stuff> = [
         {
-            title: 'Name',
-            dataIndex: 'name',
-            key: 'name',
+            title: "ID",
+            dataIndex: "id",
+            key: "id"
         },
         {
-            title: 'Second Name',
-            dataIndex: 'second_name',
-            key: 'secondName',
+            title: "Name",
+            dataIndex: "name",
+            key: "name"
         },
         {
-            title: 'Address',
-            dataIndex: 'address',
-            key: 'address',
+            title: "Phone",
+            dataIndex: "phone",
+            key: "phone"
         },
         {
-            title: 'Plan',
-            dataIndex: 'plan_id',
-            key: 'plan',
+            title: "Address",
+            dataIndex: "address",
+            key: "address"
         },
         {
-            title: 'Date of creation',
-            dataIndex: 'created_at',
-            key: 'date',
-        },
-    ];
-
-    const debtsColumn = [
-        {
-            title: 'Name',
-            dataIndex: 'name',
-            key: 'name',
-        },
-        {
-            title: 'Second Name',
-            dataIndex: 'second_name',
-            key: 'secondName',
-        },
-        {
-            title: 'Address',
-            dataIndex: 'address',
-            key: 'address',
-        },
-        {
-            title: 'Plan',
-            dataIndex: 'plan_id',
-            key: 'plan',
-        },
-        {
-            title: 'Debts',
-            dataIndex: 'debts',
-            key: 'debts',
+            title: "Graph",
+            dataIndex: "graph",
+            key: "graph",
+            render: (graph: Date) => {
+                return moment(graph).format("DD.MM.YYYY, HH:mm")
+            }
         }
     ]
 
-    const planColumn = [
+    const landedPlantColumns: ColumnsType<Plant> = [
         {
-            title: 'Name',
-            dataIndex: 'name',
-            key: 'name',
+            title: "Id",
+            dataIndex: "id",
+            key: "id"
         },
         {
-            title: 'Price',
-            dataIndex: "default_price",
-            key: 'price',
+            title: "Land date",
+            dataIndex: "land_date",
+            key: "land_date"
         },
         {
-            title: 'Created at',
-            dataIndex: 'created_at',
-            key: 'date',
+            title: "Plant age",
+            dataIndex: "plant_age",
+            key: "plant_age"
+        },
+        {
+            title: "Plant type",
+            dataIndex: "plant_type",
+            key: "plant_type",
+            filters: landedPlant.map((i) => ({
+                    text: i.plant_type,
+                    value: i.plant_type
+                })
+            ),
+            // specify the condition of filtering result
+            // here is that finding the name started with `value`
+            onFilter: (value: string, record) => record.plant_type === value
+        },
+        {
+            title: "Watering regime",
+            dataIndex: "watering_regime",
+            key: "watering_regime"
         }
     ]
 
     return (
         <div className={styles.mainWrapper}>
             <Tabs>
-                <Tabs.TabPane tab="Расчет количества абонентов с фильтром" key="item-1">
-                    <Radio.Group style={{marginBottom: "25px"}}
-                                 onChange={(event) => setSelectedCity(event.target.value)} value={selectedCity}>
-                        {cities.map((city) => (<Radio.Button value={city.id}>{city.name}</Radio.Button>))}
-                    </Radio.Group>
-                    <Radio.Group style={{marginBottom: "25px"}}>
-                        <Radio.Button onChange={() => setSelectedMonth(undefined)}>
-                            All months
-                        </Radio.Button>
-                        {
-                            moment.months().map((month, index) => {
-                                return {
-                                    month,
-                                    index
-                                }
-                            }).map((month) => (<Radio.Button onChange={(e) => setSelectedMonth(e.target.value)}
-                                                             value={month.index}>{month.month}</Radio.Button>))
-                        }
-                    </Radio.Group>
-                    <div className={styles.dataWrapper}>
-                        <Table dataSource={users.filter(
-                            user => user.region_id === selectedCity && selectedMonth ? moment(user.created_at).format("MM") == selectedMonth + 1 : user.region_id === selectedCity).map(
-                            user => {
-                                return {
-                                    ...user,
-                                    created_at: moment(user.created_at).format('DD.MM.YYYY, HH:mm'),
-                                    plan_id: plans.find(plan => plan.id === user.plan_id)?.name
+                <Tabs.TabPane tab="Landed Plants" key="item-1">
+                    <RangePicker onChange={(val) => setDate(val)}/>
+                    <br/>
+                    <br/>
+                    <Table
+                        columns={landedPlantColumns}
+                        dataSource={landedPlant.filter((i) => {
+                                if (date[0] === undefined && date[1] === undefined) {
+                                    return i
+                                } else if (moment(i.land_date).isBetween(date[0], date[1])) {
+                                    return i
                                 }
                             }
-                        )
-                        } columns={columns}/>
-                    </div>
+                        )}
+                    />
                 </Tabs.TabPane>
-                <Tabs.TabPane tab="Просмотр списка абонентов, имеющих задолженности по оплате" key="item-2">
-                    <div className={styles.dataWrapper}>
-                        <Table dataSource={users.filter(
-                            user => user.debts > 0).map(
-                            user => {
-                                return {
-                                    ...user,
-                                    created_at: moment(user.created_at).format('DD.MM.YYYY, HH:mm'),
-                                    plan_id: plans.find(plan => plan.id === user.plan_id)?.name,
-                                    debts: user.debts + " BYN"
-                                }
-                            }
-                        )
-                        } columns={debtsColumn}/>
-                    </div>
-                </Tabs.TabPane>
-                <Tabs.TabPane tab="Стоимость оплаты одной минуты разговора" key="item-3">
-                    <Radio.Group style={{marginBottom: "25px"}}>
-                        <Radio.Button onChange={() => setSelectedMonth(undefined)} value="show_all">Show all</Radio.Button>
-                        {
-                            moment.months().map((month, index) => {
-                                return {
-                                    month,
-                                    index
-                                }
-                            }).map((month) => (
-                                <Radio.Button
-                                    onChange={(e) => setSelectedMonth(e.target.value)}
-                                    value={month.index}>{month.month}</Radio.Button>
-                            ))
+                <Tabs.TabPane tab="Stuff" key="item-2">
+                    <RangePicker onChange={(val) => setDate(val)}/>
+                    <br/>
+                    <br/>
+                    <Table dataSource={stuff.filter((i) => {
+                        if (date[0] === undefined && date[1] === undefined) {
+                            return i
+                        } else if (moment(i.graph).isBetween(date[0], date[1])) {
+                            return i
                         }
-                    </Radio.Group>
-                    <div className={styles.dataWrapper}>
-                        <Table
-                            dataSource={
-                                plans.filter(
-                                    plan => selectedMonth ? moment(plan.created_at).format("MM") == selectedMonth + 1 : plan).map(
-                                    plan => {
-                                        return {
-                                            ...plan,
-                                            default_price: (plan.default_price).toFixed(2) + " BYN",
-                                            created_at: moment(plan.created_at).format('DD.MM.YYYY, HH:mm')
-                                        }
-                                    }
-                                )
-                            } columns={planColumn}/>
-                    </div>
+                    })} columns={stuffColumns}/>
                 </Tabs.TabPane>
             </Tabs>
         </div>
@@ -184,15 +122,13 @@ const Blog: React.FC<BlogProps> = ({users, cities, plans}) => {
 export default Blog
 
 export const getStaticProps: GetStaticProps = async () => {
-    const users = await prisma.customer.findMany({})
-    const cities = await prisma.region.findMany({})
-    const plans = await prisma.plan.findMany({})
+    const landedPlant = await prisma.landedPlant.findMany({})
+    const stuff = await prisma.stuff.findMany({})
     return {
         props: {
-            users: JSON.parse(JSON.stringify(users)),
-            cities: JSON.parse(JSON.stringify(cities)),
-            plans: JSON.parse(JSON.stringify(plans))
+            landedPlant: JSON.parse(JSON.stringify(landedPlant)),
+            stuff: JSON.parse(JSON.stringify(stuff))
         },
-        revalidate: 10,
-    };
+        revalidate: 10
+    }
 }
